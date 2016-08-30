@@ -1,0 +1,51 @@
+# MacPorts常用指令
+
+更新ports tree和MacPorts版本，强烈推荐第一次运行的时候使用 -v 参数，显示详细的更新过程。
+     $ sudo port -v selfupdate
+
+搜索索引中的软件
+     $ port search name
+
+安装新软件
+     $ sudo port install name
+
+检查已经安装的软件
+     $ port installed
+
+卸载软件，name名称及版本通过port installed命令检查
+     $ sudo port uninstall name
+
+查看有更新的软件以及版本
+     $ port outdated
+
+升级可以更新的软件
+     $ sudo port upgrade outdated
+
+搜索软件具体名字
+     $ sudo port search software_name
+
+查看软件依赖性
+     $ sudo port deps software_name
+
+安装软件前，用 variants 查看本地可用的已安装软件
+
+递归卸载要卸载的软件所依赖的软件包，不会卸载那些又依赖其他软件包的软件
+     $ sudo port uninstall --follow-dependencies software_name
+
+
+递归卸载要卸载的软件所依赖的软件包，会卸载那些又依赖其他软件包的软件
+     $ sudo port uninstall --follow-dependents software_name
+
+
+
+select
+     For a given group, selects a version to be the default by creating appropriate symbolic links.  For instance, python might be linked to python2.6.  Available select groups are installed as subdi-
+     rectories of ${prefix}/etc/select/.  To list the available versions in a group, use --list.  To see which version is currently selected for a group, use --show.  To change the selected version for
+     a group, use --set.
+
+     For example:
+
+  port select --list python
+  port select --show gcc
+  port select --set gcc mp-gcc44
+...

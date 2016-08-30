@@ -1,0 +1,156 @@
+# c和fortran混编（基于GNU/Linux）
+
+<http://hejianjun520520.blog.163.com/blog/static/41789395200972931110461/>
+
+转下来是自己用这个方法编译成功，推荐下。注意如果gcc版本>=4.0，则将链接时则将`-lfrtbegin -lg2c`改为`-lgfortran -lgfortranbegin`。
+
+
+网上说要分c为主程序和fortran为主程序两种情况讨论，其实我觉得不用，只要你了解生成可执行文件的机制。这个机制就是：不论是单一语言模块之间的 链接还是不同语言之间的混合链接，本质目的都是要链接器能找到定义于其他模块中的符号，如果全部找到，则链接成功，生成可执行的二进制文件。
+
+c程序：
+
+```c
+/* main.c */
+void FOO (); /* 其实按c语言的规定，调用程序之前不需声明，
+* c编译器会猜测函数的原型。需要在调用之前
+* 定义或者声明那是c++的风格
+*/
+int main ()
+{
+     FOO ();
+     return 0;
+}
+```
+
+```c
+/* foo.c */
+#include <stdio.h>
+void FOO ()
+{
+     printf (“hello world\n”);
+}
+```
+
+
+这两个文件都可以编译通过
+
+    gcc -c main.c
+    gcc -c foo.c
+
+这里gcc只用来编译并不链接，因为单独链接其中一个文件都是不完整的。必须将两个目标文件（上面会生成main.o和foo.o）链接在一起。
+
+    gcc -o sample main.o foo.o
+
+这里gcc 因为看到文件后缀名为.o所以直接进行链接而不再进行编译。（gcc在编译时对文件的识别主要靠起后缀名。如果是
+
+    gcc -o sample main.c foo.c
+
+那么因为后缀名为.c所以会先编译，又因为没有-c选项所以会再链接。多说一点如果是gcc -o sample main.c foo.o那么只编译main.c文件，再将编译后的临时目标文件与foo.o链接。gcc还会因为不同的后缀名采用不同的编译器进行编译具体参见man 或者info，因为他是compiler collection嘛:）
+
+不好意思，绕了一大圈。上面说到这两个文件都能独立编译（因为语法没错嘛），并且将编译出的目标文件放在一起链接就可以了。这正是因为链接器（链接器其实 是ld,gcc调用了它）在foo.o中找到了main.o中需要的foo的定义，并且在main.o中找到了main的定义。
+
+这里还牵扯到一个问题，那就是c是很纯朴的语言，c的函数在文本文件中是什么名字，那么编译出来在目标文件（一般是.o文件）中相应的那个函数还是那个名字（不会像c++一样为了重载在函数名前后加一大堆区分符）。
+
+比如用nm查看main.o和foo.o
+
+```
+$ nm main.o
+U FOO
+00000000 T main
+```
+
+U表示在main.o中符号foo是未定义的，需要从外部链接进来。T表示该符号存在于这个目标文件对应的文本文件中，说白了就是有定义的符号。
+
+```
+nm foo.o
+00000000 T FOO
+U printf
+```
+
+这样就可以看出，编译出的foo.o与原foo.c中的函数名都是FOO。main.c中调用了函数FOO，那么他编译出的这个函数的符号也还是FOO， 这样对函数FOO的供与求才能对的上，链接器能找到对得上的符号才能链接成功。有人说foo.o里还有一个未定义符号printf，这个到哪里去找？_gcc总是会有很多默认链接的库和链接选项，这其中包括c的标准库，而printf就在c标准库中。加上`-v`选项就可以看出来，gcc在编译和链接时 到底做了哪些事。_
+
+又多说一点，如果一个函数有定义或者被调用，那么编译后在目标文件中就会有其相应的符号，因为要告诉链接器有这个供给，或者有这个需求嘛。如果一个函数仅仅有什么声明，那么是不会编译出它的符号的，因为它既不会给别人用，也不会用别人。
+
+那么，说了这么多其实还是为了明确一点：要让链接器找到在一个文件中需要的符号定义，那么链接就能成功，就能生成可执行文件了。这也是混编的关键！
+
+将主程序main.c换成fortran的
+
+```fortran
+! main.f
+program test
+external FOO
+call FOO ()
+end
+```
+
+还是原来的foo.c，也就是说由fortran调用c，仍旧是：
+
+    gcc -c foo.c
+    gcc -c main.f
+
+注意这里用的是gcc编译main.f（fortran程序），这是完全可以的。前面说了gcc是compiler collection，它会根据文件后缀来判断是什么语言写成的，从而调用相应的编译器来编译。.f的文件它自然会用g77或者f77之类的来编译。与 g77 -c main.f完全一样。为了链接成功，先来看看foo.o和main.o中都有什么符号
+
+```
+nm main.o
+U foo_
+00000000 T MAIN__
+U s_stop
+```
+
+```
+nm foo.o
+00000000 T FOO
+U printf
+```
+
+可以看出，main.o里需要用到符号名为foo_但foo.o里提供的是FOO——不匹配。一个办法就是依据上面说的c的纯朴性——写的什么名儿，编译 出就是什么名儿，从而直接改变foo.c中的函数名，改为void foo_ ()即可。这样链接时，main.o需要的foo_符号就能在foo.o中找到。
+
+但是把c的函数名改成这个样子，感觉总是别扭。应该看到是什么（.c中看到foo_）就用什么（而.f中用的是FOO）这样才人性化。再说如果 fortran需要用到一个c库，这个库里的函数不一定都是小写并且最后还带下划线。就像c++要用c库，也需要在声明这个库中的函数时使用extern “C”，使c++编译器在编译这个函数时生成的符号名是C风格而不是C++风格。所以我们也需要类似c++的做法改变fortran程序编译出来的符号名。
+
+我不知道fortran是否有extern “C”之类的东东。但是编译fortran程序是有选项可选的。比如：
+
+    gcc -fno-underscoring -fcase-preserve -c main.f
+
+这里加了两个选项，顾名思义前者用来去掉下划线，后者用来保持大小写。这下再
+```
+nm main.o
+U FOO
+00000000 T MAIN__
+U s_stop
+```
+
+这样就解决了c函数被fortran调用的问题了。
+
+但是因为main.o中还有一个未定义符号s_stop，而gcc默认只链接和c相关的库，所以这时使用
+
+    gcc -o sample main.o foo.o
+
+会报错，大概就是说s_stop未定义(unreferenced 或者 undefined)。一个简单的解决办法——使用g77链接main.o和foo.o。就好像gcc默认会链接c库一样，g77默认会链接fortran的一些基本的，标准的库；另一个办法就是查明g77会链接哪些基本的，标准的fortran库，这也很简单在编译链接fortran程序时，加上-v选项。我看到的g77的比gcc多了这几个选项 -lfrtbegin -lg2c -lm，那么就是说g77链接了libfrtbegin,libg2c,libm，最后一个是数学库，前两个应该就是g77专用的了。所以
+
+    gcc -lfrtbegin -lg2c -osample main.o foo.o
+
+（同样g++使用了-lstdc++，也就是libstdc++。这也就是为什么时常有人问gcc main.cc会出错的问题了，如果main.cc用到了c++库中的函数，那么当然要使用gcc -lstdc++ main.cc才行了）
+
+如果我们保持main.c不变，而将foo.c变为foo.f。也就是c调用fortran
+
+```fortran
+c foo.f
+SUBROUTINE FOO()
+print *,"hello world"
+END
+```
+
+编译foo.f和main.c
+
+    gcc -fno-underscoring -fcase-preserve -c foo.f
+    gcc -c main.c
+
+链接
+
+    gcc -lfrtbegin -lg2c main.o foo.o -osample
+
+成了。（其实，当fortran不为主程序时，可以不用链接libfrtbegin，起码这个小程序不用）
+
+这里讨论了混编的基本原理，就是让链接器找到符号所在。从这点出发，一些混编问题都应该有了解决的思路。至于代参数的函数我没有涉及到，但我想都得从这个 基本出发吧。还有些程序会使用动态链接库.so，那么应该使用nm的-D选项查看这些动态符号。（objdum的功能比nm更强大）
+
+还有一件事，那就是我这里链接采用了gcc -l的方式，更基本的是ld的方式，只要你知道链接哪些库，链接的顺序如何即可。但是为了简单安全方便，还是建议直接用相应的编译器完成链接工作（比如 fortran就用g77），因为它们的链接顺序已经理好了（并且它们除了链接自己的库还链接c库，而gcc只链接c库，所以用它们不用担心链不到c库， 而用gcc会担心链不到专有的库）。像上面的例子最后的链接的使用g77最好，因为我的例子很简单，而你的有可能很复杂。

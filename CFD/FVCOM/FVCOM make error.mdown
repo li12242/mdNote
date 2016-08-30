@@ -1,0 +1,22 @@
+# FVCOM 编译错误
+
+## gfortran
+
+使用gfortran编译时有时会出现（gcc-4.6等低版本）
+
+```
+mod_interp.f90:2054.25:
+
+    IBIT1 = (INT(SIGN(1.,DX))+1) / 2
+                         1
+Error: 'b' argument of 'sign' intrinsic at (1) must be the same type and kind as 'a'
+mod_interp.f90:2055.25:
+
+    IBIT2 = (INT(SIGN(1.,DY))+1) / 2
+                         1
+Error: 'b' argument of 'sign' intrinsic at (1) must be the same type and kind as 'a'
+make: *** [mod_interp.o] Error 1
+make: *** Waiting for unfinished jobs....
+```
+
+这是由于 DX 变量类型为 real(sp), 故常数 1. 需写成 1.0\_sp 形式。

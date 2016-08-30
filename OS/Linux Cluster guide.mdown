@@ -1,0 +1,40 @@
+# 集群维护常用指令
+
+>集群root用户密码: civil9482
+
+## 检查磁盘挂载
+
+* 每个节点应有`public`，`hpcdata`，`hpcdata1`三个磁盘
+
+* 挂载磁盘命令为:
+
+    mount 192.168.0.1:/public /public
+
+## 检查节点工作情况
+
+* 列出所有节点
+
+    qnodes
+
+* 检查节点当前任务列
+
+    qstat
+
+## PBS任务分配系统
+
+* 打开torque任务分配系统
+
+    cd /public/torque/sbin/ && ./pbs_mom
+
+* 管理节点上重启pbs的相关服务
+
+    ./qterm -t quick  #停掉pbs相关服务
+    ./pbs_server      #重启pbs服务
+
+* 计算节点上重启pbs_mom
+
+    ./pbs_mom restart
+
+* 强制删除任务
+
+    qdel -p [id]

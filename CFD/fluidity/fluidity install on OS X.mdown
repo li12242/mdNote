@@ -1,0 +1,307 @@
+#fluidity install on OS X
+
+> author: li12242
+
+some useful website:
+
+1. <https://code.launchpad.net/~j-percival/fluidity/fluidity-darwin-port>
+2. <https://code.launchpad.net/~asc/fluidity/fluidity-darwin-port-minimal>
+3. <https://github.com/FluidityProject/fluidity/wiki/Compiling-on-Mac-OS-X>
+
+##For MacPorts Users
+
+Core requirements are GCC 4.6 and openmpi. Both of these can be obtained by running the following command in a terminal window (as a user with suitable authority)
+
+	port install openmpi +gcc46
+
+or download openmpi and install
+
+```
+./configure  \
+--prefix=/opt/local/openmpi-gun  \
+CC=gcc  \
+CXX=g++  \
+FC=gfortran 
+
+make
+make install
+```
+
+Once installed, it is useful to set a few additional Environment variables so that the correct compilers are always used:
+
+```
+export PATH=/opt/local/openmpi-gun/bin:$PATH
+export PATH=/opt/local/openmpi-gun/include:$PATH
+export LD_LIBRARY_PATH=/opt/local/openmpi-gun/lib:$LD_LIBRARY_PATH
+```
+
+Other necessary supporting software under macports includes:
+
+* gmsh 2.5.1 (meshing program):
+
+		port install gmsh-devel
+
+* VTK 5.8
+
+		port install vtk-5
+
+* BZR
+
+		port install bzr
+
+* Valgrind
+
+		port install valgrind
+
+* various python packakges
+
+		port install py27-numpy py27-tkinter py27-dateutil py27-sympy
+
+* UDUnits
+
+		port install udunits
+
+* CGAL
+
+		port install cgal
+
+* NetCDF
+
+		port install netcdf netcdf-cxx netcdf-fortran
+
+
+##For Homebrew Users
+
+* GCC-4.6
+		brew install gcc46 --enable-fortran
+
+* openmpi-1.8.3
+
+```
+$ brew diy --name=open-mpi
+--prefix=/usr/local/Cellar/open-mpi/1.8.3
+
+$ ./configure  \
+--prefix=/usr/local/Cellar/open-mpi/1.8.3  \
+CC=gcc-4.6  \
+CXX=g++-4.6  \
+FC=gfortran-4.6
+
+$ make & make install
+
+$ brew switch open-mpi 1.8.3
+```
+
+* gmsh
+
+		brew install gmsh
+
+* bzr
+
+		brew install bzr
+
+* Valgrind
+
+		brew install valgrind
+
+* PyGTK
+	
+		brew install pygtk --with-libglade
+
+* VTK-5.10.1
+
+warnning: configure process contains `-lvtkCommon`, check libvtkCommon.so or libvtkCommon.dylib exits.
+
+```
+brew install vtk5
+```
+
+or
+
+```
+$ brew diy
+-DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/VTK/5.10.1
+
+$ mkdir build
+$ cd build
+```
+
+* netcdf-3.6.2
+
+```
+$ brew diy
+--prefix=/usr/local/Cellar/netcdf/3.6.2
+
+$ ./configure  \
+--prefix=/usr/local/Cellar/netcdf/3.6.2  \
+CC=mpicc  \
+FC=mpif90  \
+F77=mpif90  \
+CXX=mpicxx
+
+$ make 
+$ make install
+
+$ brew switch netcdf 3.6.2
+```
+
+###Building blas-lapack
+
+
+###Building petsc
+
+```
+$ brew diy
+-DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/petsc/3.3-p7
+
+
+$ ./configure  \
+--prefix=/usr/local/Cellar/petsc/3.3-p7  \
+PETSC_ARCH=linux-gnu \
+--with-python   \
+--with-debugging=1    \
+--with-c-support=1    \
+--with-c++-support=1  \
+--with-shared-libraries=0 \
+--with-pic=fpic  \
+--with-mpi=1     \
+--with-mpi-dir=/usr/local/opt/open-mpi  \
+--with-lapack-lib=/Users/mac/Documents/Model/gnu_libs/fluidty/lib/liblapack.a  \
+--with-blas-lib=/Users/mac/Documents/Model/gnu_libs/fluidty/lib/libblas.a  \
+--download-metis \
+--download-parmetis \
+--download-suitesparse=1 	\
+--download-ml 	\
+--download-blacs	\
+--download-scalapack	\
+--download-mumps	\
+--download-ptscotch 	\
+--download-hypre	\
+--with-fortran-interfaces=1	\
+--download-prometheus--with-batch 
+
+$ brew link petsc
+```
+
+```
+make PETSC_DIR=/Users/mac/Documents/Software/petsc-3.3-p7 PETSC_ARCH=linux-gnu all test	
+```
+Now, PETSc must be built and tested.
+
+```
+cd ${PETSC_DIR}/src/ksp/ksp/examples/tutorials
+
+make ex1
+mpiexec -np 1 ./ex1
+make ex23
+mpiexec -np 2 ./ex23
+```
+
+
+```	
+make PETSC_DIR=/Users/mac/Documents/Software/petsc-3.3-p7 PETSC_ARCH=linux-gnu install
+```
+
+then follow the instructions given by the configure program to make, install and test. Finally set:
+
+	export PETSC_DIR=/usr/local/Cellar/petsc/3.3-p7
+	export PETSC_ARCH=linux-gnu
+
+changing the path as necesary.
+
+test:
+
+into the Petsc/src/ksp/ksp/examples/tests/, run
+	
+	make ex1
+	./ex1
+	
+###Building zoltan_v3.81
+
+download form: <http://www.cs.sandia.gov/zoltan/>
+
+First apply the patch given in on the Fluidity support page, then run configure with:
+
+```
+$ brew diy
+-DCMAKE_INSTALL_PREFIX=/usr/local/Cellar/Zoltan/3.81
+
+$ mkdir build
+$ cd build
+
+$ ../configure 	\
+x86_64-darwin-gnu 	\
+--prefix=/usr/local/Cellar/Zoltan/3.81 	\
+--enable-mpi 	\
+--with-mpi-compilers  	\
+FC=mpif90   \
+CC=mpicc  \
+CXX=mpicxx  \
+--with-gnumake 	\
+--enable-zoltan 	\
+--with-parmetis 	\
+--enable-f90interface  	\
+--enable-zoltan-cppdriver 	\
+--disable-examples 	\
+--with-parmetis-incdir=/usr/local/opt/petsc/include  \
+--with-parmetis-libdir=/usr/local/opt/petsc/lib
+
+$ make everything
+$ make install
+$ cd ../
+
+$ brew link zoltan
+```
+
+###Building Fluidity: fluidity-darwin-port
+
+**check mpicc is wrap with gcc-4.6**
+```
+$ mpicc --showme
+gcc-4.6 -I/usr/local/Cellar/open-mpi/1.8.3/include -L/usr/local/Cellar/open-mpi/1.8.3/lib -lmpi
+```
+
+```
+./configure  \
+--prefix=/Users/mac/Documents/Model/gnu_libs/fluidty  \
+F77=gfortran-4.6  \
+FC=gfortran-4.6 	\
+CXX=g++-4.6 	\
+CC=g++-4.6 	\
+MPICC=mpicc 	\
+MPIF90=mpif90 	\
+MPIF77=mpif90 	\
+MPICXX=mpicxx 	\
+--enable-2d-adaptivity  \
+--enable-mba3d  \
+--with-netcdf=/usr/local/opt/netcdf/  \
+FCFLAGS="-I${PETSC_DIR}/include -I/usr/local/opt/vtk5/include/vtk-5.10/  -I/usr/local/opt/zoltan/include/  -I/usr/local/opt/netcdf/include"  \
+CXXFLAGS="-I${PETSC_DIR}/include -I/usr/local/opt/vtk5/include/vtk-5.10/  -I/usr/local/opt/zoltan/include/  -I/usr/local/opt/netcdf/include"  \
+LIBS="-L${PETSC_DIR}/lib  -L/usr/local/opt/vtk5/lib/vtk-5.10/   -L/usr/local/opt/zoltan/lib/  -L/usr/local/opt/netcdf/lib"  \
+--with-blas=/Users/mac/Documents/Model/gnu_libs/fluidty/lib/libblas.a  \
+--with-lapack=/Users/mac/Documents/Model/gnu_libs/fluidty/lib/liblapack.a   \
+LDFLAGS="-L${PETSC_DIR}/lib  -L/usr/local/opt/vtk5/lib/vtk-5.10/  -L/usr/local/opt/zoltan/lib/  -L/usr/local/opt/netcdf/lib" \
+--with-zoltan=/usr/local/opt/zoltan/
+
+4.1.11 不再支持以下命令？
+--with-zoltan=/usr/local/opt/zoltan/
+```
+
+##run Fluidity: fluidity-darwin-port
+
+第一次运行出现
+
+	Could not find platform independent libraries <prefix>
+	Could not find platform dependent libraries <exec_prefix>
+	ImportError: No module named site
+
+网上找了一下，是因为没有正确设置python环境变量的缘故
+
+set environmental variable:
+
+	export PYTHONHOME=/Users/mac/anaconda/bin/
+	export PYTHONPATH=/Users/mac/anaconda/lib/python2.7
+
+***
+Added the location of the package directory, containing .py files such as "filtering.py" and "vtkFilteringPython.pyd", to your PYTHONPATH.
+

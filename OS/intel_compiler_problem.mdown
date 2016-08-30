@@ -1,0 +1,9 @@
+```
+icpc: error #10001: could not find directory in which the set of libstdc++ include files resides
+```
+
+<https://software.intel.com/en-us/forums/topic/486698>
+
+If you had the "icpc: error #10001: could not find directory in which the set of libstdc++ include files resides" issue with 13.0.1 compiler on Mavericks with Xcode 5 then it was the expected one. Full support of Xcode 5 was introduced in compiler 14.0.1 (Composer XE 2013 SP1 Update 1). You could try to overcome the issue in 13.0.1 by setting 
+
+    GXX_INCLUDE=/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.9.sdk/usr/include/c++/4.2.1

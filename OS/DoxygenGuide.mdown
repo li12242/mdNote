@@ -1,0 +1,121 @@
+# Doxygen
+
+```
+!------------------------------------------------------------------------------
+! NASA/GSFC, Software Integration & Visualization Office, Code 610.3
+!------------------------------------------------------------------------------
+!
+! MODULE: Module Name
+!
+!> @author
+!> Module Author Name and Affiliation
+!
+! DESCRIPTION:
+!> Brief description of module.
+!
+! REVISION HISTORY:
+! DD Mmm YYYY - Initial Version
+! TODO_dd_mmm_yyyy - TODO_describe_appropriate_changes - TODO_name
+!------------------------------------------------------------------------------
+
+module MyModule_mod
+
+   use AnotherModule_mod
+
+   implicit none
+
+   public MyModule_type            ! TODO_brief_description
+
+   public someFunction             ! TODO_brief_description
+
+   ! NOTE_avoid_public_variables_if_possible
+
+contains
+
+   !---------------------------------------------------------------------------
+   !> @author
+   !> Routine Author Name and Affiliation.
+   !
+   ! DESCRIPTION:
+   !> Brief description of routine.
+   !> @brief
+   !> Flow method (rate of change of position) used by integrator.
+   !> Compute \f$ \frac{d\lambda}{dt} , \frac{d\phi}{dt},  \frac{dz}{dt} \f$
+   !
+   ! REVISION HISTORY:
+   ! TODO_dd_mmm_yyyy - TODO_describe_appropriate_changes - TODO_name
+   !
+   !> @param[in] inParam     
+   !> @param[out] outParam     
+   !> @return returnValue
+   !---------------------------------------------------------------------------
+
+   function someFunction
+      use AnotherModule
+
+      real, intent(in) :: inParam       
+      real, intent(out) :: outParam      
+      real, intent(inout) :: inOutParam   !TODO_description
+      real :: returnValue                
+
+      real :: someVariable                !> @var Variable description
+
+      ! TODO_insert_code_here
+
+   end function someFunction
+
+end module MyModule_mod
+```
+
+
+OS X中的 Doxygen GUI 运行时无法寻找到相应的 Latex 或 dvisp 命令，主要原因是GUI启动的 section 无法使用 bash 中用户自定义的环境变量，正如下面提到的：
+
+<http://doxygen.10944.n7.nabble.com/Re-doxywizard-amp-latex-on-mac-os-x-td2944.html>
+
+```
+On 09.10.2008 22:43, TG wrote:
+
+> latex and dvips are on my path  but I get, running the gui
+>     sh: latex: command not found
+>     sh: dvips: ommand not found
+> however:
+>     ~ echo $PATH
+>        /sw/bin:/sw/sbin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/texbin:/usr/X11/bin:/usr/X11R6/bin
+>     ~ which latex
+>       /usr/texbin/latex
+> and offcourse latex and friends run just fine from the command line
+>  
+... [show rest of quote]
+In which file do you set your path to include the LaTeX and dvips
+directories? Which shell are you using (bash, tcsh, etc)? Exactly which
+files are read and evaluated by the shell  depends whether or not a
+shell is a login shell and whether or not it is interactive. I assume
+that the shell started by Doxygen to execute latex and dvips is neither
+started as a login shell nor as an interactive one, so it is probable
+that the file in which you define your path is not simply not read when
+the child shell starts up. The exact rules and file names depend on the
+shell you are using.
+
+
+As an alternative you can use a special Mac OS X mechanism to set
+environment variables (PATH in your case) for all GUI products or for
+specific applications (Doxywizard) which should then be inherited to all
+child processes. For more information see:
+http://developer.apple.com/documentation/MacOSX/Conceptual/BPRuntimeConfig/Articles/EnvironmentVars.html#//apple_ref/doc/uid/20002093-BCIJIJBH
+
+
+Regards
+Martin Jerabek
+
+
+--
+Martin Jerabek (ext. 541)
+```
+
+
+一个避免这种错误的诀窍是使用命令行操作，运行
+
+    /Applications/Doxygen.app/Contents/Resources/doxygen ｛Configure File｝
+
+其中｛Configure File｝可以通过GUI生成
+R&D

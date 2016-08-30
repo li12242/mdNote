@@ -1,0 +1,72 @@
+# fluidity算例
+
+## 1.：top_hat
+
+`top_hat_dg.flml`配置选项
+
+problem_type: fluids
+
+### 1.1.geometry
+
+1. mesh(CoordinateMesh)
+  from_file: line
+
+2. mesh(DGMesh)
+  from_mesh: mesh(CoordinateMesh)
+  mesh_continuity: discontinuous
+
+3. quadrature
+  degree: 4
+
+### 1.2.material_phase(Fluid)
+
+1. vector_field(Velocity): prescribed
+  mesh(CoordinateMesh)
+  value(WholeMesh): constant
+
+2. scalar_field(Tracer): prognostic
+  mesh(DGMesh)
+  equation(AdvectionDiffusion)
+  spatial_discretisation: discontinuous_galerkin + conservative_advection
+  temporal_discretisation: theta = 0.5
+  initial_condition(WholeMesh)
+
+3. scalar_field(DG_CourantNumber): diagnostic
+
+
+```
+说明：
+prescribed 表示该变量是常数或者由外部文件指定
+prognostic 表示该变量是由求解微分方程得到的
+diagnostic 表示由其他变量得到的
+```
+
+## 2.lock_exchange
+
+### 2.1.geometry
+
+1. mesh(CoordinateMesh)
+  from_file: channel_2d
+
+2. mesh(VelocityMesh)
+  from_mesh: mesh(CoordinateMesh)
+
+3. mesh(PressureMesh)
+  from_mesh: mesh(CoordinateMesh)
+
+4. quadrature: degree: 3
+
+### 2.2.material_phase(fluid)
+
+1. equation_of_state: fluids: linear
+  reference_density: 1.0
+  temperature_dependency: reference_temperature: 1.0
+
+2. scalar_field(Pressure): prognostic
+  mesh(PressureMesh)
+  spatial_discretisation: continuous_galerkin
+
+3. vector_field(Velocity): prognostic
+  mesh(VelocityMesh)
+  spatial_discretisation: continuous_galerkin, conservative_advection: 0.0(non-conservative)
+  temporal_discretisation: theta: 0.5, relaxation: 0.5 ？

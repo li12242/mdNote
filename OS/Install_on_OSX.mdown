@@ -1,0 +1,58 @@
+#How to install program on OS X/Linux
+
+#configure安装
+
+* 检查安装相关所有指令
+
+    ```
+    ./configure --help > help.txt
+    ./configure {OPTIONS}
+    make && make install
+    ```
+
+#cmake安装
+
+* 文件内新建build文件夹，使用ccmake设置相应参数
+
+    ```
+    cd ./build && ccmake ../
+    make -j2 && make install
+    ```
+
+    `make -j2`表示使用两个进程并行编译
+
+#环境变量设置
+
+环境变量可分为两种：
+
+1. 仅当前shell生效
+2. 永久生效
+
+仅当前shell内生效
+
+    ```
+    export PATH=myPath:$PATH
+    ```
+
+添加到用户配置文件内（OS X中为`.bash_profile`），使永久生效（需重启shell；或使用`source ~/.bashrc`更新用户设置文件）
+
+    ```
+    echo"export PATH=newPATH" >> ~/.bashrc
+    source ~/.bashrc
+    ```
+
+##常用环境变量
+
+1. PATH
+
+    指令搜索目录，在这些目录中搜索如`make`， `ccmake`， `ls`等指令。
+
+2. LD_LIBRARY_PATH
+
+    静态库搜索目录，如`libnetcdf.a`等。当链接时给定指令`-lnetcdf`，会在给出的静态库目录中搜索`libnetcdf.a`文件（静态库名称为`netcdf`），链接成可执行程序。
+
+3. DYLD_LIBRARY_PATH
+
+    动态库搜索目录，如`libnetcdf.dyld`等文件。
+
+    

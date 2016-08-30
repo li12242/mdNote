@@ -1,0 +1,133 @@
+#Installing Updating Python on OS X
+
+<http://wolfpaulus.com/jounal/mac/installing_python_osx/>
+
+While Python comes pre-installed on OS X, Apple doesn’t do a good job on keeping the Python runtime environment up to date. Currently, on Mac OS X 10.7.4 “Lion”, entering python -V returns Python 2.7.1. Even worse, Mac OS X 10.6 “Snow Leopard” is still on a Python 2.6 release.
+While the latest Python releases are always available on http://www.python.org, updating a Mac isn’t a simple, straight forward process.
+
+Follow along and update your Mac to Python 2.7.3, or 3.3.0 or whatever the newest 2.x and 3.x release might be, when you read this. To update your Mac to something like Python 2.7.3, I assume that
+
+* your Mac-User account is setup as an “Administrator” account.
+* your Mac already has this folder: /System/Library/Frameworks/Python.framework/Versions/
+
+To read about how to upgrade to Python 3.3, jump to the very bottom of this post.
+
+##1. Downloading and Installing the latest Python Release
+Go to python.org and pick the most recent Python 2.x release: http://python.org/download.
+
+I picked Python 2.7.3 Mac OS X 64-bit/32-bit x86-64/i386 Installer (for Mac OS X 10.6 and later), an about 18 MB download.
+
+Opening the DMG and executing the installer (Python.mpkg) will install the Python release into /Library/Frameworks/Python.framework, which is not next to the other, already installed Python versions and may lead to some nasty incompatibilities. Moreover, /usr/bin/python still executes python 2.7.1., i.e. some work still needs to be done to really update Python on your Mac.
+
+##2. Moving Python into the right place
+
+If Python 2.7.x is already available on the Mac (e.g. on OS X Lion), open a terminal and enter:
+
+```
+sudo rm -R /System/Library/Frameworks/Python.framework/Versions/2.7
+```
+
+This will delete Python 2.7.
+
+In any case, now enter this into the terminal
+
+```
+sudo mv /Library/Frameworks/Python.framework/Versions/2.7 /System/Library/Frameworks/Python.framework/Versions
+```
+
+which moves the just installed python 2.7.3 release next to the other Python releases.
+
+##3. Fixing the Group
+
+Setting group to wheel, just like it’s done for the already installed Python Versions:
+
+```
+sudo chown -R root:wheel /System/Library/Frameworks/Python.framework/Versions/2.7
+```
+
+##4. Updating the Current Link
+
+```
+sudo rm /System/Library/Frameworks/Python.framework/Versions/Current
+sudo ln -s /System/Library/Frameworks/Python.framework/Versions/2.7 /System/Library/Frameworks/Python.framework/Versions/Current
+```
+
+##5. Fixing /usr/bin
+
+Since python, pythonw, etc. are not linked but actually reside in the `/usr/bin` directory,
+
+`/usr/bin/python` still executes python 2.7.1..
+
+Therefore, we are going to remove the old python executable files and replacing them with links into `/System/Library/Frameworks/Python.framework/Versions/Current`:
+
+###5.1. Removing old copies
+
+```
+sudo rm /usr/bin/pydoc
+sudo rm /usr/bin/python
+sudo rm /usr/bin/pythonw
+sudo rm /usr/bin/python-config
+```
+
+###5.2. Creating links into /System/…/Python.framework/Versions/Current
+
+```
+sudo ln -s /System/Library/Frameworks/Python.framework/Versions/2.7/bin/pydoc /usr/bin/pydoc
+sudo ln -s /System/Library/Frameworks/Python.framework/Versions/2.7/bin/python /usr/bin/python
+sudo ln -s /System/Library/Frameworks/Python.framework/Versions/2.7/bin/pythonw /usr/bin/pythonw
+sudo ln -s /System/Library/Frameworks/Python.framework/Versions/2.7/bin/python-config /usr/bin/python-config
+```
+
+##6. Updating .bash_profile
+
+Use TextMate, pico, or your favorite text editor to edit the hidden ~/.bash_profile file. If you want to be able to execute python tools like idle easily, without providing the path, edit the PATH for Python like this:
+
+```
+# Setting PATH for Python 2.7
+# The orginal version is saved in .bash_profile.pysave
+PATH="/System/Library/Frameworks/Python.framework/Versions/2.7/bin:${PATH}"
+export PATH
+```
+
+However, you can also remove those four lines altogether or fall-back to the .bash_profile.pysave file.
+
+Try it by closing the terminal app, re-opening it, and entering python -V as well as /usr/bin/python -V.
+
+##7. Updating your IDE
+
+The last remaining step it to tell your IDE about the new Python release that you just installed.
+
+I hope you have discovered PyCharm, JetBrain’s IDE for Python and Django.
+
+In PyCharm, you would open its properties and under “Project Interpreters” change the Python Interpreter, by pointing it to the `/System/Library/Frameworks/Python.framework/Versions/2.7` directory.
+
+#Updating to Python 3.3
+
+Following the same procedure, you can also update to Python 3.3. E.g, I downloaded the Python 3.3.0 Mac OS X 64-bit/32-bit x86-64/i386 Installer form here: http://python.org/download/
+
+After running the included installer, a script like this (run with sudo) should put everything into the right place and make python 3.3 the default python version.
+
+```
+#!/bin/bash
+rm -R /System/Library/Frameworks/Python.framework/Versions/3.3
+mv /Library/Frameworks/Python.framework/Versions/3.3 /System/Library/Frameworks/Python.framework/Versions
+chown -R root:wheel /System/Library/Frameworks/Python.framework/Versions/3.3
+ 
+rm /System/Library/Frameworks/Python.framework/Versions/Current
+ln -s /System/Library/Frameworks/Python.framework/Versions/3.3 /System/Library/Frameworks/Python.framework/Versions/Current
+ 
+rm /usr/bin/pydoc
+rm /usr/bin/python
+rm /usr/bin/pythonw
+rm /usr/bin/python-config
+ 
+rm /System/Library/Frameworks/Python.framework/Versions/3.3/bin/pydoc
+rm /System/Library/Frameworks/Python.framework/Versions/3.3/bin/python
+rm /System/Library/Frameworks/Python.framework/Versions/3.3/bin/pythonw
+rm /System/Library/Frameworks/Python.framework/Versions/3.3/bin/python-config
+ 
+ln -s /System/Library/Frameworks/Python.framework/Versions/3.3/bin/pydoc3 /usr/bin/pydoc
+ln -s /System/Library/Frameworks/Python.framework/Versions/3.3/bin/python3 /usr/bin/python
+ln -s /System/Library/Frameworks/Python.framework/Versions/3.3/bin/pythonw3 /usr/bin/pythonw
+ln -s /System/Library/Frameworks/Python.framework/Versions/3.3/bin/python3-config /usr/bin/python-config
+```

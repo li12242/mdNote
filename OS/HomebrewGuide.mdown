@@ -1,0 +1,114 @@
+# Homebrew
+
+MacPorts 基于源代码的管理优点是非常灵活，更新很快 (很多时候更新只需要修改一下 Portfile 里的版本号和压缩包校验码就可以)，用户要订制安装也可以简单的通过修改 Portfile 实现，而且很多开源软件的安装配置会有多种模式 (典型的大都通过 configure 步骤配置)，在 MacPorts 中可以方便地通过 variants 参数指定，而不必像二进制分发那样，在远程服务器上编译的时候就定死了。而 MacPorts 的问题是，它希望自己安装的每套软件，所有的依赖都在它自己这个系统内 (一般就是你的 /opt/local) 解决，就算 Mac OS X 系统原生自带了满足依赖的库，它也坚决不用，这样就给你的系统增加了许多冗余，也客观增加了管理上的难度，典型的情况是：你的系统里装了两套 Python，该怎么管理外部安装的 Python 模块？比如通过 easy_install 或 setup.py 安装的，往往很难记住到底装到哪里了。
+
+而 Fink 虽然不会这么自作主张地添加依赖，最大的问题是更新不够及时，这也是缺乏维护人手导致的。二进制安装的缺点在上面也提到了：不便定制。
+
+所以 Homebrew 的出现，也许不是很及时，但在现在仍然是很必要的，它有这么一些优点：
+
+1. 尽可能的利用你的系统里自带的库，包括 zlib, OpenSSL, Python 等等，只要 Mac OS X 自带了，它就不会另装一份。
+
+2. 定制简单，通过用 Ruby 写的 Homebrew formula 来定制，甚至可以灵活的跟踪直接来自版本管理库的最新软件
+
+3. 用 Git 管理和同步自身
+
+4. 直接装在`/usr/local`下，这样可以少定义很多各种 PATH 环境变量
+
+其中第一点尤为重要。好的，下面简单介绍一下 Homebrew 的安装，以及它是如何工作的。
+
+## 安装
+
+首先，Homebrew 的原则是“No sudo”，也就是说，既然 Mac OS X (client 版本) 绝大部分情况下都是归你这个有管理员权限的用户，为什么在自己的 /usr/local 下安装程序还需要 sudo 呢？所以，首先：
+
+sudo chown -R `whoami` /usr/local
+然后可以正式开始安装，我推荐的安装方式是先用 git-osx-installer 装上 git，然后用 git 安装：
+
+```
+cd /usr/local
+git init
+git remote add origin git://github.com/mxcl/homebrew.git
+git pull origin master
+```
+
+这么做的实际作用是把你的 /usr/local 目录变成了一个本地 git 仓库，只不过这个仓库只跟踪跟 Homebrew 相关的更新，并不影响任何其他软件的安装。
+
+这样安装会在 /usr/local 下创建 Library 这个目录，然后在 /usr/local/bin 中加入 brew 这个 ruby 脚本。
+
+## 使用
+
+安装完毕，下面就可以试试了：
+
+brew search
+这个命令用来搜索所有可以通过 homebrew 安装的软件，不带任何参数的时候就是列出所有的。可以看到数量已经不少了。
+
+下面就是选择安装，比如我想安装 unrar：
+
+```
+$ brew search rar
+gnu-scientific-library     unrar
+
+$ brew install unrar
+Warning: It appears you have Macports or Fink installed
+Although, unlikely, this can break builds or cause obscure runtime issues.
+If you experience problems try uninstalling these tools.
+/usr/local/Library/Formula/unrar.rb:3: warning: already initialized constant ALL_CPP
+==> Downloading http://www.rarlab.com/rar/unrarsrc-3.9.4.tar.gz
+######################################################################## 100.0%
+==> g++ -O4 -march=core2 -mmmx -msse3 -w -pipe -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE all.cpp -o unrar
+/usr/local/Cellar/unrar/3.9.4: 3 files, 320K, built in 13 seconds
+```
+
+可以看到，unrar 被安装到了 /usr/local/Cellar/unrar/3.9.4 这个目录下，但这样我们访问起来显然很不方便，所以 Homebrew 会在 /usr/local/bin 下面创建到 unrar 程序的符号链接，如果安装的是库之类的，也会对应在 /usr/local/lib 这样的目录下创建符号链接。所以这是一套类似 GoboLinux 的软件管理方式。
+
+安装后就可以用 list 命令列出：
+
+```
+$ brew list
+pkg-config  unrar
+```
+
+更新
+
+如果用了一段时间，需要更新同步上游的 Formula，可以简单地：
+
+```
+$ brew update
+From git://github.com/mxcl/homebrew
+ * branch            master     -> FETCH_HEAD
+Updated Homebrew from 60600885 to 60600885.
+No formulae were updated.
+Homebrew 会通过 git 完成同步。
+```
+
+总结起来，Homebrew 是一套很有新意的软件包管理工具，虽然它的更新及时程度还有待考验，但至少在目前还是比较令我满意的解决方案。
+
+### Can I install my own stuff to /usr/local?
+
+Yes, brew is designed to not get in your way so you can use it how you like.
+
+Install your own stuff, but be aware that if you install common libraries, like libexpat yourself, it may cause trouble when trying to build certain Homebrew formula. As a result brew doctor will warn you about this.
+
+Thus it’s probably better to install your own stuff to the Cellar and then brew link it. Like so:
+
+```
+$ cd foo-0.1
+$ brew diy --name=foo
+./configure —prefix=/usr/local/Cellar/foo/0.1
+$ ./configure —prefix=/usr/local/Cellar/foo/0.1
+[snip]
+$ make && make install
+$ brew link foo
+Linking /usr/local/Cellar/foo/0.1… 17 symlinks created
+```
+
+### 常用命令
+
+brew search 搜尋套件
+brew info 查詢套件資訊
+brew list 已經裝了哪些套件
+brew update 更新 homebrew 自己
+brew install 安裝套件
+brew edit xxx 设置套件编译命令
+brew versions xxx 查看版本
+brew unlink xxx 撤销可执行程序链接
+brew switch [software] xxx 选择版本

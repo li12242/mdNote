@@ -1,0 +1,199 @@
+#fluidity install on Cluster
+
+#1.编译器安装 gcc4.6 openmpi python
+
+HOME_PATH= `/hpcdata1/xiaozhong/`
+
+##1.1.gmp & mpc & mpfr
+
+###1.1.1.gmp-6.0.0
+
+```
+$ tar -xvf gmp-6.0.0a.tar.bz2
+$ cd gmp-6.0.0
+
+./configure --prefix=/hpcdata1/xiaozhong/public/gmp-6.0.0  \
+--enable-cxx
+
+make -j4
+make install
+```
+
+###1.1.2.mpfr-3.1.2
+```
+$ tar -xvf mpfr-3.1.2.tar.bz2
+$ cd mpfr-3.1.2
+
+./configure --prefix=/hpcdata1/xiaozhong/public/mpfr-3.1.2  \
+--with-gmp=/hpcdata1/xiaozhong/public/gmp-6.0.0
+
+make -j4
+make install
+```
+
+###1.1.3.mpc
+```
+$ tar -xvf mpc-1.0.2.tar.gz
+$ cd mpc-1.0.2
+
+./configure --prefix=/hpcdata1/xiaozhong/public/mpc-1.0.2  \
+--with-gmp=/hpcdata1/xiaozhong/public/gmp-6.0.0   \
+--with-mpfr=/hpcdata1/xiaozhong/public/mpfr-3.1.2
+
+make -j4
+make install
+```
+
+
+###1.1.4.set environment path
+```
+$ vi ~/.bashrc
+
+edit .bashrc
+
+export LD_LIBRARY_PATH=/hpcdata1/xiaozhong/public/mpc-1.0.2/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/hpcdata1/xiaozhong/public/gmp-6.0.0/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/hpcdata1/xiaozhong/public/mpfr-3.1.2/lib:$LD_LIBRARY_PATH
+```
+
+##1.2.gcc-4.6
+
+```
+$ tar -xvf gcc-4.6.4.tar
+
+$ cd gcc-4.6.4
+
+./configure  \
+--prefix=/hpcdata1/xiaozhong/public/gcc-4.6.4  \
+--with-mpc=/hpcdata1/xiaozhong/public/mpc-1.0.2  \
+--with-mpfr=/hpcdata1/xiaozhong/public/mpfr-3.1.2  \
+--with-gmp=/hpcdata1/xiaozhong/public/gmp-6.0.0  \
+--enable-languages=c,c++,fortran
+
+make -j4
+make install
+```
+
+set environment path
+
+要将动态链接库位置添加到 LD_LIBRARY_PATH 内，否则编译好程序无法运行
+
+```
+export PATH=/hpcdata1/xiaozhong/public/gcc-4.6.4/bin:$PATH
+export LD_LIBRARY_PATH=/hpcdata1/xiaozhong/public/gcc-4.6.4/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=/hpcdata1/xiaozhong/public/gcc-4.6.4/lib64:$LD_LIBRARY_PATH
+
+```
+
+##1.3.openmpi-1.8.3
+
+```
+$ tar -xvf openmpi-1.8.3.tar
+$ cd openmpi-1.8.3
+
+./configure  \
+--prefix=/hpcdata1/xiaozhong/public/openmpi-1.8.3  \
+CC=gcc  \
+CXX=g++  \
+FC=gfortran \
+CFLAGS=-fgnu89-inline
+
+make -j4
+make install
+```
+
+edit .bashrc
+
+```
+export PATH=/hpcdata1/xiaozhong/public/openmpi-1.8.3/bin:$PATH
+export LD_LIBRARY_PATH=/hpcdata1/xiaozhong/public/openmpi-1.8.3/lib:$LD_LIBRARY_PATH
+```
+
+##1.4.python
+
+###1.4.1.python 2.7
+
+```
+$ wget --no-check-certificate http://python.org/ftp/python/2.7.3/Python-2.7.3.tar.bz2 
+$ tar -xvf Python-2.7.3.tar.bz2
+$ make
+```
+
+the system print:
+
+```
+Python build finished, but the necessary bits to build these modules were not found:
+_tkinter           bsddb185           dl              
+imageop            sunaudiodev                        
+To find the necessary bits, look in setup.py in detect_modules() for the module's name.
+```
+
+无视，继续
+
+    $ make install
+
+###1.4.2.setuptools
+
+```
+$ tar -xvf setuptools-12.0.5.tar.gz
+$ cd setuptools-12.0.5
+$ su
+python setup.py install --prefix=/hpcdata1/xiaozhong/public
+```
+
+此时在`/hpcdata1/xiaozhong/public`目录下生成`lib/python2.7/site-packages`目录，运行里面`setuptools-12.0.5-py2.7.egg`脚本，便在`/usr/local/bin/`目录下生成easy_install程序。
+
+```
+sudo sh ./setuptools-12.0.5-py2.7.egg
+```
+
+测试
+
+    easy_install numpy
+
+
+
+```
+Searching for numpy
+Reading https://pypi.python.org/simple/numpy/
+Download error on https://pypi.python.org/simple/numpy/: [Errno 1] _ssl.c:504: error:14090086:SSL routines:SSL3_GET_SERVER_CERTIFICATE:certificate verify failed -- Some packages may not be found!
+Couldn't find index page for 'numpy' (maybe misspelled?)
+Scanning index of all packages (this may take a while)
+Reading https://pypi.python.org/simple/
+Download error on https://pypi.python.org/simple/: [Errno 1] _ssl.c:504: error:14090086:SSL routines:SSL3_GET_SERVER_CERTIFICATE:certificate verify failed -- Some packages may not be found!
+No local packages or download links found for numpy
+error: Could not find suitable distribution for Requirement.parse('numpy')
+```
+
+curl的证书太老了需要下载最新的证书
+
+下载最新的证书文件 
+
+    $ wget http://curl.haxx.se/ca/cacert.pem
+
+更名为ca-bundle.crt放置到默认目录
+
+    $ mv cacert.pem ca-bundle.crt 
+    $ mv ca-bundle.crt /etc/pki/tls/certs 
+
+~~还是不能用！！！~~
+
+###1.4.3.numpy 源程序安装
+
+首先添加安装位置到PYTHONPATH环境变量中，edit `.bashrc`
+
+    export PYTHONPATH=/hpcdata1/xiaozhong/public/lib/python2.7/site-packages/:$PYTHONPATH
+
+```
+$ tar -xvf numpy-1.9.2.tar.gz 
+$ cd setuptools-12.0.5
+$ python setup.py install --prefix=/hpcdata1/xiaozhong/public
+```
+
+`不成功？`
+
+
+
+
+
+

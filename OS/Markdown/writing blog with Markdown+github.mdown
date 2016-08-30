@@ -1,0 +1,36 @@
+#Writing in Markdown
+
+##Writing blog on GitHub
+
+1. 注册了github帐号，并且创建一个repository：https://github.com/li12242/mdNote.git
+2. 使用sublime写一个 markdown 文章
+3. 使用git命名将本地笔记发布到远程
+
+```
+    git clone https://github.com/li12242/mdNote.git
+```
+
+以后直接把笔记copy到对应目录下面
+
+    git status [查看状态]
+    git add . [添加所有改动文件]
+    git commite -m "add a new note" [提交]
+    git push [推送到github]
+
+参考: <http://www.cnblogs.com/jiuyuehe/p/3852768.html>
+
+---
+
+##Markdown Tips
+
+**Markdown内添加文本内超链接**
+
+在跳转位置设定好ID，链接时使用该ID进行引用
+```
+<span id="ID"></span>
+...
+
+[Labels XXX](#ID)
+```
+
+

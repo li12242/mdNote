@@ -1,0 +1,431 @@
+#Translation of Fluidity manual
+[TOC]
+
+----
+###2.Model equations
+
+####Advection-Diffusion equation
+
+**General equation**
+
+**Scalar boundary conditions**
+边界条件种类，具体见[动量方程边界条件](#MomentumBoundary)，[边界条件设置](#BoundaryConditons)
+
+* Dirichlet condition for a scalar field
+* Neumann condition for a scalar field
+* Robin condition for a scalar field
+
+####Fluid equations
+
+**Mass conservation**
+**Momentum conservation**
+**Equations of state & constitutive relations**
+**Forms of the viscous term in the momentum equation**
+**Momentum boundary conditions**
+<span id="MomentumBoundary"></span>
+
+* **Prescribed Dirichlet condition for momentum — no-slip as a special case**
+通过指定三个速度分量来形成无滑移边界条件；
+也可在入流处单独指定切向速度为0；
+
+* **Prescribed stress condition for momentum — free-stress as a special case**
+积分动量方程时使用Greeen公式可以得到
+$$\bar{\tau}\cdot \vec{n}-p\vec{n}= \vec{T}$$
+$\vec{T}$为表面处应力，可以分别指定法向和切向应力（如风应力）
+
+* **Traction boundary condition for momentum — free-slip as a special case**
+可以指定法向速度分量
+$$\vec{u}\cdot\vec{n} = g \quad x\in\partial\Omega$$
+剩余两个自由度通过指定切向应力分量来确定$\vec{T}_{\tau}$
+例如在固壁（rigid lid）边界处，切向分量指定为风应力或地步切应力
+free slip 指应力的切向分量为0
+* **Free surface boundary condition**
+$$\frac{\partial \eta}{\partial t} = \frac{\vec{u}\cdot\vec{n}}{\vec{n}\cdot\vec{k}}$$
+自由表面边界条件并没有限定法向速度分量，只是描述了自由表面运动状况，仍需各个方向应力条件，法向应力为$-p_{atm}$，切向应力可以为0或风应力
+$$\vec{n}\cdot\bar{\tau}\cdot\vec{n}-p=-p_{atm} \quad x\in\partial\Omega$$
+* **Wetting and drying**
+
+---
+###5.Embedded models
+
+####
+####Sediments
+Fluidity 能够模拟多组分泥沙
+
+有关泥沙模型建立时需要注意的
+* 每种泥沙都需要沉速，在设置选项内并没有显示为必须得元素 
+* 泥沙密度和泥沙沉积量都需要定义
+* 状态方程必须为线性方程
+
+**抑制沉降速度**
+$$u_{si} = u_{s0}(1-c)^{2.39}$$
+其中$u_{s0}$为非抑制沉速
+
+**沉积与冲刷**
+1.Garcia's re-entrainment
+
+
+2.Generic re-entrainment
+
+**泥沙粘性**
+
+粘性受泥沙浓度影响
+$$\upsilon=\upsilon_0(1-c/0.65)^{-1.625}$$
+注意，需要定义ZeroSedimentConcentrationViscosity张量场
+
+---
+###6.Meshes in Fluidity
+
+####Supported mesh formats
+
+fluidity 支持网格种类
+
+* Gmsh
+* Triangle format
+* ExodusII
+
+####Surface and Regions ids
+<span id="SurfaceId"></span>
+
+Surface id 标明计算区域边界不同部分，以此来添加不同边界条件。Regions id 标明计算区域不同部分。两种都可以通过Gmsh中添加物理id来表明不同几何对象。
+二维地形中，surface id 是作为物理 id 给边界上一部分线集合。Region id 定义在区域不同面（集合）上。同样的，三维地形中surface id是通过定义surface ids来添加，Region id通过定义volume id来添加。
+
+在并行计算中必须添加surface id，其他情况也建议添加。
+
+如图中是lock exchange算例中Gmsh几何网格。注意Surface id 与 Region id是指Physical tags，而非Elementary tags
+![](fig_in_guide/Surface_Region_Ids.png)
+在Gmsh文件中定义Physical
+```
+    ...
+    // top
+    Physical Line(6) = {4,8,12};
+    // bottom
+    Physical Line(7) = {3,7,11};
+    // ends
+    Physical Line(8) = {1,10};
+    Physical Surface(9) = {5,9,13};
+```
+
+
+####Meshes and function spaces
+####Extruded meshes
+延展总是朝下的（沿重力方向），顶部区域是平的，对应2维情况是y=0，三维中是z=0
+
+####Periodic meshes
+####Meshing tools
+**Mesh Verification**
+**Mesh creation**
+**Mesh conversion**
+**Decomposing meshes for parallel**
+为使用并行计算需首先需要进行网格划分。详细算例参考[Fluidity并行计算](#ParallelExample)
+
+* flredecomp 
+并行进行初始网格划分
+计算控制文件simulation.flml，网格文件mesh
+```
+    mpiexec -n <nparts> <<fluidity source path>>/bin/flredecomp -i 1 -o <nparts> simulation simulation_flredecomp
+    mpiexec -n <nparts> fluidity <other options> simulation_flredecomp.flml
+```
+
+* fldecomp
+**fldecomp will be removed in a future release of Fluidity.**
+串行网格划分工具，推荐
+计算控制文件simulation.flml，网格文件mesh
+```
+    fldecomp -n <nparts> <ohter options> mesh
+    mpiexec -n <nparts> fluidity <other options> simulation.flml
+```
+注意，划分网格时必须使用`gmsh -bin`命令将网格划分为binary format。
+
+**Decomposing a periodic mesh**
+
+####Non-Fluidity tools
+
+---
+###8.Configureing Fluidity
+
+####Overview
+####Options syntax
+####The options tree
+顶层设置包括以下选项
+
+* Simulation Name
+* Problem Type
+* Geometry
+* IO
+
+**IO**
+vtu是唯一允许格式
+
+* Dump format
+* Dump period
+* Output mesh
+所有场值会插值到同一个网格输出。使用低精度网格会降低计算结果精度，使用高精度网格会生成很大的结果文件。
+若变量场是间断的，输出文件中网格也会是间断形式。
+* Convergence
+* Checkpointing
+保留必要信息来热启动计算
+更新5个文件
+1. Mesh files
+2. Halo files
+3. Field files
+4. Checkpointed option file - 新的FLML文件
+5. Checkpointed detector files
+
+* Stat
+* Detectors
+设置跟踪质点
+* Log output
+
+**Timestepping**
+
+####Meshes
+**Reading meshes from file**
+支持triangle格式与Gmsh格式（后缀名为.msh）
+**Deriving meshes from other meshes**
+通过同一网格但是获得不同连续性（CG与DG）和单元阶数等。
+网格可以是任意名称，但是只有CoordinateMesh最特殊，因为它要存储网格坐标信息。
+
+* Shape function
+指定形状函数多项式阶数
+* Continuity
+连续性，主要用于区分CG与DG方法。注意，无法从DG网格中获取CD网格
+* Periodic
+需要定义physical 边界、aliased 边界与python映射函数。映射函数将aliased boundary上的点映射到对应的physical边界上
+* Extruded meshes
+1. 延展深度可以为常数或python函数（或netcdf格式数据，见实例`tides_in_the_Mediterranean_Sea`）
+2. `...sizeing_function`控制垂向延展网格大小
+3. 可以指定上表面与底部surface ID，以此来添加边界条件
+4. 可以为不同区域（region ID区分）设定不同延展条件，也可以使用全局延展`regions::WholeMesh`
+5. 可以设定2维平面在球面上，向球心方向延展
+* Extruded periodic meshes
+首先生成周期性网格，再根据周期性网格得到延展网格，其余网格根据延展网格获得 
+
+####Material/Phase
+多相流设置条件
+
+####Fields
+**Types of field**
+变量根据其维度可分为
+1. Scalar fields 每个节点只有一个数值
+2. Vector fields 每个节点包含一个[nx1]大小的数列
+3. Tensor fields 每个节点包含一个[nDimxnDim]矩阵
+
+根据变量类型又可分为
+1. Prognostic fields 求解微分方程得到
+2. Diagnostic fields 根据其他变量得到
+3. Prescribed fields 由外部数据指定
+4. Aliased 使某变量与其他变量相等，不另使用计算资源。用于多相流体中，用来交换不同流体中变量。
+>For example if two material phases share a common velocity field then only one should contain a prognostic field while the other is aliased to the other material phase.
+
+** Setting field values**
+用户必须指定数据有两种情况：prognostic 类型变量的初始值，prescribed 类型变量值
+1. Constant fields
+2. Setting fields with a Python function
+3. Reading fields from a file (using the from file option)
+对于prescribed 类型变量，输入文件格式必须是vtu，对prognostic 类型变量可以是vtu和netcdf
+4. Setting an initial condition from a NetCDF file
+5. Setting fields from NEMO data
+6. Setting an initial free surface height
+
+**Region IDs**
+**Mathematical constraints on initial conditions**
+
+####Advected quantities: momentum and tracers
+**Spatial discretisations**
+1. Continuous Galerkin
+2. Control Volumes
+3. Coupled CV
+4. Discontinuous Galerkin method for the advection-diffusion equation
+5. Conservative advection
+
+**Temporal discretisations**
+**Source and absorption terms**
+给动量方程与示踪方程添加附加驱动力
+$$\frac{\partial c}{\partial t}=F(c,x,t)-\sigma c+F$$
+其中$F(c,x,t)$为对流扩散项，$\sigma$为吸收项，$F$为源
+
+**Sponge regions**
+通过源与汇的组合来避免动量方程限制（`没看懂`）
+
+####Solving for pressure
+**Geostrophic pressure solvers**
+**First guess for Poisson pressure equation**
+**Removing the null space of the pressure gradient operator**
+**Continuous Galerkin pressure with control volume tested continuity**
+
+####Solution of linear systems
+**Iterative Method**
+**Preconditioner**
+**Relative Error**
+
+####Equation of State（EOS）
+状态方程，三种状态方程可选
+1. 简单线性状态方程，`.../equation of state/fluids/linear`
+2. 海洋模拟复杂状态方程，`.../equation of state/fluids/ocean pade approximation`
+3. 不可压状态方程，`.../equation of state/compressible/miegrunneisen`
+
+**Linear fluid EOS**
+
+**Pade ocean EOS**
+
+
+####Boundary conditions
+<span id="BoundaryConditons"></span>
+当没有任何边界条件时，默认为"stress-free"边界条件。
+>It is also possible to leave boundary conditions undefined, in which case ”stress-free” conditions are applied. See section 2.2.2 for further details.
+
+
+**Adding a boundary condition**
+每个变量条形树内`.../boundary_conditions`
+![](fig_in_guide/Add_Boundary.png)
+
+**Selecting surface**
+surface id 定义参考第6章 [Surface and Regions ids](#SurfaceId)
+![](fig_in_guide/Surface_id.png)
+
+**Boundary condition types**
+边界条件类型
+![](fig_in_guide/Boundary_Types.png =50x)
+
+* Dirichlet
+可以选择弱边界条件`.../apply_weakly`，要求流速计算使用间断有限元或连续有限元＋分部积分，压力连续有限元、有限体积＋分部积分
+
+* Neumann
+
+* Robin
+
+* Bulk formulae
+通过气象资料为以下数据导入Neumann 或 Dirichlet边界条件
+1. Salinity
+2. Temperature
+3. Velocity
+4. PhotosyntheticRadiation
+
+* Zero flux
+只适用有限体积法计算，阻止流量从边界流出
+
+* Flux
+只适用有限体积法计算，允许h大小的流量通过边界
+$$\frac{\partial c}{\partial t} = h$$
+
+* Free surface
+>The `.../free` surface option **allows the upper surface height to vary according to the pressure and velocity fields**. This boundary condition is available on the velocity field only. When using a free surface, it is recommended that you active **a diagnostic free surface** (though this is optional). This option is also available at `.../scalar field::FreeSurface`.
+> The `.../free_surface` option allows the upper surface height to vary according to the pressure and velocity fields. This boundary condition is available on the velocity field only.
+> By default, the mesh geometry is not influenced by the free-surface calculation, however Fluidity can deform the mesh according to the free-surface elevation. This option is available at `/mesh adaptivity/mesh movement/free_surface`.
+
+* Wetting and drying
+使用干湿计算首先要打开Free surface的`/mesh adaptivity/mesh movement/free_surface`选项。
+若是使用延展网格，延展参数需要变化。
+打开选项`/mesh adaptivity/mesh movement/ free surface/wetting and drying`干湿计算，唯一的参数是干湿阀值，指明干网格处保留的最小层厚度。
+
+* Drag
+应用与速度成正比或速度二次方成正比的拖曳力，拖曳力大小和类型都需要设定，一个曼宁-Strickler类型的拖曳力可以设定在`.../quadratic drag/ manning strickler`。
+
+* Wind forcing
+风应力可以通过应力或速度来设定。注意，若使用应力形式来说，物理单位应该和模拟的单位相匹配，若使用速度形式，空气密度需要指定于同一单位。
+
+* No normal flow
+* Prescribed normal flow
+
+**Internal boundary conditions**
+**Special input data for boundary conditions**
+**Special cases**
+
+####
+####Configuring ocean simulations
+**Meshes**
+应当使用水平为非结构化网格，垂向使用结构化网格，可以在gmsh中直接生成或使用2维网格在fluidity内延展。
+* 为了满足$P_{1DG}P_2$单元组合，需要两个附加网格：
+1. The VelocityMesh 必须是DG格式
+2. The PressureMesh 必须是二次
+
+* 打开 `/geometry/ocean_boundaries`
+* 需要diagnostic类型变量FreeSurface，与`vertical_lumping`选项
+
+**Time stepping**
+1. `/timestepping/nonlinear_iterations`  = 2
+2. 在 vector_field(Velocity)选项下 `.../temporal_discretisation/theta` =1.0 （>= 0.5）
+3. 在 vector_field(Velocity)选项下 `.../temporal_discretisation/maximum_courant_number_per_sub_cycle` = 0.5
+4. 打开一个diagnostic类型的scalar变量，`/material_phase/scalar_field::DG_CourantNumber`
+
+**Velocity options**
+在 vector_field(Velocity)选项下
+1. `../equation(Boussinesq)`
+2. `../spatial_discretisation` = discontinuous_galerkin
+3. `../spatial_discretisation/advection_scheme/project_velocity_to_continuous` = mesh(CoordinateMesh)
+4. `../spatial_discretisation/advection_scheme/integrate_advection_by_parts` = twice
+5. `../solver/iterative_method` = gmres
+6. `../solver/preconditioner` = sor
+
+**Choosing Viscosity values**
+>Often, a fixed “eddy viscosity” is chosen as a tunable parameter. (for the horizontal)
+
+**Pressure options**
+1. `.../spatial_discretisation/continuous_galerkin`
+2. `.../spatial_discretisation/remove_stabilisation_term`
+3. `.../spatial_discretisation/integrate_continuity_by_parts`
+4. `.../scheme/poisson_pressure_solution` = only_first_timestep
+5. `.../scheme/use_projection_method`
+6. `.../solver/iterative_method(cg)`
+7. `.../solver/preconditioner(mg)`
+8. `.../solver/preconditioner(mg)/vertical_lumping`
+
+**Boundary conditions**
+1. For bottom `.../vector_field(Velocity)/boundary_conditions(...)/type(no_normal_flow)` 
+2. For bottom `.../vector_field(Velocity)/boundary_conditions(...)/type(drag)/constant` = 0.0025
+3. For surface `.../vector_field(Velocity)/boundary_conditions(...)/type(free_surface)`
+4. For closed boundaries(coast) `.../vector_field(Velocity)/boundary_conditions(...)/type(no_normal_flow)` 
+5. For open boundary conditions `.../scalar_field(Pressure)/boundary_conditions(...)/type(dirichlet)` 根据潮位高度给定开边界压力 
+
+
+
+---
+###Appendix F
+
+####Fluidity并行计算设置步骤
+<span id="ParallelExample"></span>
+lock-exchange算例中，并行计算设置步骤如下
+
+* Perform 2D mesh generation & Use binary format
+```sh
+    $ gmsh -bin channel_2d.geo -2
+    Info    : Running 'gmsh -bin channel_2d.geo -2' [Gmsh 2.8.5, 1 node, max. 1 thread]
+    Info    : Started on Sun May 31 14:28:13 2015
+    Info    : Reading 'channel_2d.geo'...
+    Info    : Done reading 'channel_2d.geo'
+    Info    : Meshing 1D...
+    Info    : Meshing curve 1 (Line)
+    Info    : Meshing curve 2 (extruded)
+    Info    : Meshing curve 3 (extruded)
+    Info    : Meshing curve 4 (extruded)
+    Info    : Meshing curve 6 (extruded)
+    Info    : Meshing curve 7 (extruded)
+    Info    : Meshing curve 8 (extruded)
+    Info    : Meshing curve 10 (extruded)
+    Info    : Meshing curve 11 (extruded)
+    Info    : Meshing curve 12 (extruded)
+    Info    : Done meshing 1D (0.000287 s)
+    Info    : Meshing 2D...
+    Info    : Meshing surface 5 (extruded)
+    Info    : Meshing surface 9 (extruded)
+    Info    : Meshing surface 13 (extruded)
+    Info    : Done meshing 2D (0.00437808 s)
+    Info    : 1491 vertices 3028 elements
+    Info    : Writing 'channel_2d.msh'...
+    Info    : Done writing 'channel_2d.msh'
+    Info    : Stopped on Sun May 31 14:28:14 2015
+```
+
+* Perform mesh decomposition with fldecomp
+```
+$ fldecomp -m gmsh -n 2 channel_2d
+```
+
+* run in parallel
+注意flml配置文件中，网格形式为gmsh
+```    
+mpiexec -n 2 fluidity -l -v 0 lock_exchange.flml
+```
+
+---
