@@ -67,9 +67,16 @@ cudaEventRecord( start, 0 );
 // do some work on the GPU
 cudaEventRecord( stop, 0 );
 ```
-在这里仍存在一点问题，由于GPU运行是异步的，当GPU开始运行我们的记录事件指令时，CPU会在GPU运行结束之前开始运行下一条指定。因此，我们需要采用另一个函数`cudaEventSynchronize`来同步CPU。
+在这里仍存在一点问题，由于GPU运行是异步的，当GPU开始运行我们的记录事件指令时，CPU会在GPU运行结束之前开始运行下一条指定。因此，我们需要采用另一个函数`cudaEventSynchronize`来同步CPU。当我们调用`cudaEventSynchronize`返回时，便可知道在GPU中stop前所有指令都已经完成了，因此可以正确统计GPU运行时间。
 
 # Ch7. Texture Memory
+
+## 7.2. 纹理内存概述
+
+纹理内存是另一种只读内存。与常量内存相同，纹理内存也是在芯片上，因此在某些情形下可以通过减少内存请求次数来提供更高的带宽，但是要求内存读取具有空间局部性。
+
+## 7.3. 热传导模拟
+
 # Ch8. Graphics Interoperability
 # Ch9. Atomics
 # Ch10. Streams
