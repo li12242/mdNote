@@ -60,6 +60,8 @@ $$\hat{\Delta}_i = \theta^+ \text{max} \left(0, \Delta_i\right) - \theta^- \text
 
 ## 扩展至四边形单元
 
+### Green-Gauss公式梯度计算
+
 在四边形单元中计算时，大部分过程都与三角形单元相同，唯一区别是确定如何由四个边上的限制后的 $\hat{\Delta}_i$ 获得单元内分布解。这里我们采用一种简单方法，首先利用Green-Gauss公式计算出单元内近似斜率 $\frac{\partial u}{\partial x}$ 与 $\frac{\partial u}{\partial y}$，随后根据此斜率与均值便可获得单元内限制后的解。
 
 其中斜率的近似公式采用下式计算
@@ -69,250 +71,20 @@ $$\begin{array}{ll}
 \frac{\partial u}{\partial y} = \frac{1}{A}\int_{\Omega_A}\frac{\partial u}{\partial y} \mathrm{dA} =\frac{1}{A}\oint_{\partial \Omega_A} -\hat{u} \mathrm{dx} = \sum_{i=1}^{Nfaces} - \hat{u}_i \Delta x_i
 \end{array}$$
 
+### 问题
+
+![](http://ww2.sinaimg.cn/large/7a1c18a8jw1f7hrcg1uh9j20fk0r3q3t.jpg)
+
+如下图所示，只根据边中点值进行重构，可能会使顶点超过周围单元均值范围，成为新的极值点。因此在四边形中，采用顶点替换边中点代入TVB限制器函数中更为合理。
+
+但是当采用顶点变量值作为TVB限制器参数时，由会有过度耗散问题，如下图所示。
+
+![](http://ww2.sinaimg.cn/large/7a1c18a8jw1f7hw7wvooij20fk0r3gmh.jpg)
+
 ## 代码
 
-源程序文件为`/assemble/Slope_limiters_DG.F90`。
-
-```
-subroutine cockburn_shu_setup_ele(ele, T, X)
-integer, intent(in) :: ele
-type(scalar_field), intent(inout) :: T
-type(vector_field), intent(in) :: X
-
-integer, dimension(:), pointer :: neigh, x_neigh
-real, dimension(X%dim) :: ele_centre, face_2_centre
-real :: max_alpha, min_alpha, neg_alpha
-integer :: ele_2, ni, nj, face, face_2, i, nk, ni_skip, info, nl
-real, dimension(X%dim, ele_loc(X,ele)) :: X_val, X_val_2
-real, dimension(X%dim, ele_face_count(T,ele)) :: neigh_centre,&
-     & face_centre
-real, dimension(X%dim) :: alpha1, alpha2
-real, dimension(X%dim,X%dim) :: alphamat
-real, dimension(X%dim,X%dim+1) :: dx_f, dx_c
-integer, dimension(mesh_dim(T)) :: face_nodes
-
-X_val=ele_val(X, ele)
-
-ele_centre=sum(X_val,2)/size(X_val,2)
-
-neigh=>ele_neigh(T, ele)
-! x_neigh/=t_neigh only on periodic boundaries.
-x_neigh=>ele_neigh(X, ele)
-
-searchloop: do ni=1,size(neigh)
-
-   !----------------------------------------------------------------------
-   ! Find the relevant faces.
-   !----------------------------------------------------------------------
-   ele_2=neigh(ni)
-
-   ! Note that although face is calculated on field U, it is in fact
-   ! applicable to any field which shares the same mesh topology.
-   face=ele_face(T, ele, ele_2)
-   face_nodes=face_local_nodes(T, face)
-
-   face_centre(:,ni) = sum(X_val(:,face_nodes),2)/size(face_nodes)
-
-   if (ele_2<=0) then
-      ! External face.
-      neigh_centre(:,ni)=face_centre(:,ni)
-      cycle
-   end if
-
-   X_val_2=ele_val(X, ele_2)
-
-   neigh_centre(:,ni)=sum(X_val_2,2)/size(X_val_2,2)
-   if (ele_2/=x_neigh(ni)) then
-      ! Periodic boundary case. We have to cook up the coordinate by
-      ! adding vectors to the face from each side.
-      face_2=ele_face(T, ele_2, ele)
-      face_2_centre = &
-           sum(face_val(X,face_2),2)/size(face_val(X,face_2),2)
-      neigh_centre(:,ni)=face_centre(:,ni) + &
-           (neigh_centre(:,ni) - face_2_centre)
-   end if
-
-end do searchloop
-
-do ni = 1, size(neigh)
-   dx_c(:,ni)=neigh_centre(:,ni)-ele_centre !Vectors from ni centres to
-   !                                         !ele centre
-   dx_f(:,ni)=face_centre(:,ni)-ele_centre !Vectors from ni face centres
-                                          !to ele centre
-end do
-
-alpha_construction_loop: do ni = 1, size(neigh)
-   !Loop for constructing Delta v(m_i,K_0) as described in C&S
-   alphamat(:,1) = dx_c(:,ni)
-
-   max_alpha = -1.0
-   ni_skip = 0
-
-   choosing_best_other_face_loop: do nj = 1, size(neigh)
-      !Loop over the other faces to choose best one to use
-      !for linear basis across face
-
-      if(nj==ni) cycle
-
-      !Construct a linear basis using all faces except for nj
-      nl = 1
-      do nk = 1, size(neigh)
-         if(nk==nj.or.nk==ni) cycle
-         nl = nl + 1
-         alphamat(:,nl) = dx_c(:,nk)
-      end do
-
-      !Solve for basis coefficients alpha
-      alpha2 = dx_f(:,ni)
-      call solve(alphamat,alpha2,info)
-
-      if((.not.any(alpha2<0.0)).and.alpha2(1)/norm2(alpha2)>max_alpha) &
-           & then
-         alpha1 = alpha2
-         ni_skip = nj
-         max_alpha = alpha2(1)/norm2(alpha2)
-      end if
-
-   end do choosing_best_other_face_loop
-
-   if(max_alpha<0.0) then
-      if(tolerate_negative_weights) then
-         min_alpha = huge(0.0)
-         ni_skip = 0
-         choosing_best_other_face_neg_weights_loop: do nj = 1, size(neigh)
-            !Loop over the other faces to choose best one to use
-            !for linear basis across face
-
-            if(nj==ni) cycle
-
-            !Construct a linear basis using all faces except for nj
-            nl = 1
-            do nk = 1, size(neigh)
-               if(nk==nj.or.nk==ni) cycle
-               nl = nl + 1
-               alphamat(:,nl) = dx_c(:,nk)
-            end do
-
-            !Solve for basis coefficients alpha
-            alpha2 = dx_f(:,ni)
-            call solve(alphamat,alpha2,info)
-
-            neg_alpha = 0.0
-            do i = 1, size(alpha2)
-               if(alpha2(i)<0.0) then
-                  neg_alpha = neg_alpha + alpha2(i)**2
-               end if
-            end do
-            neg_alpha = sqrt(neg_alpha)
-
-            if(min_alpha>neg_alpha) then
-               alpha1 = alpha2
-               ni_skip = nj
-               min_alpha = neg_alpha
-            end if
-         end do choosing_best_other_face_neg_weights_loop
-      else
-         FLAbort('solving for alpha failed')
-      end if
-   end if
-
-   alpha(ele,ni,:) = 0.0
-   alpha(ele,ni,ni) = alpha1(1)
-   nl = 1
-   do nj = 1, size(neigh)
-      if(nj==ni.or.nj==ni_skip) cycle
-      nl = nl + 1
-      alpha(ele,ni,nj) = alpha1(nl)
-   end do
-
-   dx2(ele,ni) = norm2(dx_c(:,ni))
-
-end do alpha_construction_loop
-
-end subroutine cockburn_shu_setup_ele
-```
-
-```
-subroutine limit_slope_ele_cockburn_shu(ele, T, X)
-!!< Slope limiter according to Cockburn and Shu (2001)
-!!< http://dx.doi.org/10.1023/A:1012873910884
-integer, intent(in) :: ele
-type(scalar_field), intent(inout) :: T
-type(vector_field), intent(in) :: X
-
-integer, dimension(:), pointer :: neigh, x_neigh, T_ele
-real :: ele_mean
-real :: pos, neg
-integer :: ele_2, ni, face
-real, dimension(ele_loc(T,ele)) :: T_val, T_val_2
-real, dimension(ele_face_count(T,ele)) :: neigh_mean, face_mean
-real, dimension(mesh_dim(T)+1) :: delta_v
-real, dimension(mesh_dim(T)+1) :: Delta, new_val
-integer, dimension(mesh_dim(T)) :: face_nodes
-
-T_val=ele_val(T, ele)
-
-ele_mean=sum(T_val)/size(T_val)
-
-neigh=>ele_neigh(T, ele)
-! x_neigh/=t_neigh only on periodic boundaries.
-x_neigh=>ele_neigh(X, ele)
-
-searchloop: do ni=1,size(neigh)
-
-   !----------------------------------------------------------------------
-   ! Find the relevant faces.
-   !----------------------------------------------------------------------
-   ele_2=neigh(ni)
-
-   ! Note that although face is calculated on field U, it is in fact
-   ! applicable to any field which shares the same mesh topology.
-   face=ele_face(T, ele, ele_2)
-   face_nodes=face_local_nodes(T, face)
-
-   face_mean(ni) = sum(T_val(face_nodes))/size(face_nodes)
-
-   if (ele_2<=0) then
-      ! External face.
-      neigh_mean(ni)=face_mean(ni)
-      cycle
-   end if
-
-   T_val_2=ele_val(T, ele_2)
-
-   neigh_mean(ni)=sum(T_val_2)/size(T_val_2)
-
-end do searchloop
-
-delta_v = matmul(alpha(ele,:,:),neigh_mean-ele_mean)
-
-delta_loop: do ni=1,size(neigh)
-
-   Delta(ni)=TVB_minmod(face_mean(ni)-ele_mean, &
-        Limit_factor*delta_v(ni), dx2(ele,ni))
-
-end do delta_loop
-
-if (abs(sum(Delta))>1000.0*epsilon(0.0)) then
-   ! Coefficients do not sum to 0.0
-
-   pos=sum(max(0.0, Delta))
-   neg=sum(max(0.0, -Delta))
-
-   Delta = min(1.0,neg/pos)*max(0.0,Delta) &
-        -min(1.0,pos/neg)*max(0.0,-Delta)
-
-end if
-
-new_val=matmul(A,Delta+ele_mean)
-
-! Success or non-boundary failure.
-T_ele=>ele_nodes(T,ele)
-
-call set(T, T_ele, new_val)
-
-end subroutine limit_slope_ele_cockburn_shu
-```
+* Fluidity中源程序文件为 `assemble/Slope_limiters_DG.F90`；
+* DG-FEM中对应二维限制器Mex函数 `+Utilities/+Limiter/+Limiter2D/TVB2d_Mex.c`。
 
 ---
 [1]	COCKBURN B, SHU C-W. TVB Runge-Kutta local projection discontinuous Galerkin finite element method for conservation laws. II. General framework[J]. Mathematics of Computation, 1989, 52(186): 411–411.
