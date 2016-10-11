@@ -1,4 +1,4 @@
-#Godunov's theorem
+# Godunov's theorem
 
 转自[Wiki](https://en.wikipedia.org/w/index.php?title=Godunov%27s_theorem&oldid=629042350)
 
@@ -20,13 +20,13 @@ Sergei K. Godunov 教授首先在其博士阶段（莫斯科国立大学）证�
 假设一个连续体问题由PDE描述，并且使用数值方法在进行计算，只进行一步，均匀网格，$M$个节点，积分算法，显式或者隐式。如果 $x_j = j\Delta x$，$t^n = n\Delta t$，那么一个数值格式可以表示为
 
 $$\begin{equation}
-\sum^{M}\_{m = 1}\beta_m \varphi\_{j+m}^{n+1} = \sum^{M}\_{m = 1}\alpha_m \varphi\_{j+m}^{n} 
+\sum^{M}\_{m = 1}\beta_m \varphi\_{j+m}^{n+1} = \sum^{M}\_{m = 1}\alpha_m \varphi\_{j+m}^{n}
 \end{equation}$$
 
 换句话说，计算值 $\varphi\_{j}^{n+1}$ 在时刻 $n+1$ 节点 $j$ 是当前时刻解 $n$ 的线性函数形式。我们假设 $\beta_m$ 唯一的决定了 $\varphi\_{j}^{n+1}$。现在，既然上述方程代表了 $\varphi\_{j}^{n+1}$ 与 $\varphi\_{j}^{n}$ 之间线性关系，那么我们可以采用线性转换得到下面等价形式，
 
 $$\begin{equation}
-\varphi\_{j}^{n+1} = \sum^{M}\_{m = 1}\gamma_m \varphi\_{j+m}^{n} 
+\varphi\_{j}^{n+1} = \sum^{M}\_{m = 1}\gamma_m \varphi\_{j+m}^{n}
 \end{equation}$$
 
 
@@ -41,7 +41,7 @@ $$\begin{equation}
 
 **case 1：充分性**
 
-假设 $\varphi\_{j}^{n}$ 是随 $j$ 单调递增的，那么，由于 $\varphi\_{j}^{n} \le \varphi\_{j+1}^{n} \le \cdots \le \varphi\_{j+m}^{n} $，因此 
+假设 $\varphi\_{j}^{n}$ 是随 $j$ 单调递增的，那么，由于 $\varphi\_{j}^{n} \le \varphi\_{j+1}^{n} \le \cdots \le \varphi\_{j+m}^{n} $，因此
 
 $$\begin{equation}
 \varphi\_{j}^{n+1} - \varphi\_{j-1}^{n+1} = \sum^{M}\_{m = 1}\gamma_m (\varphi\_{j+m}^{n} -  \varphi\_{j+m-1}^{n}) \ge 0
@@ -61,7 +61,7 @@ $$\begin{equation}
 根据方程（2）可以得到
 
 $$\begin{equation}
-\varphi\_{j}^{n+1} - \varphi\_{j-1}^{n+1} = \sum^{M}\_{m = 1}\gamma_m (\varphi\_{j+m}^{n} -  \varphi\_{j+m-1}^{n}) = \left\\{ 
+\varphi\_{j}^{n+1} - \varphi\_{j-1}^{n+1} = \sum^{M}\_{m = 1}\gamma_m (\varphi\_{j+m}^{n} -  \varphi\_{j+m-1}^{n}) = \left\\{
 \begin{array}{ll}
 0, & [j+m \ne k] \cr
 \gamma_m, & [j+m =k]

@@ -1,4 +1,4 @@
-#Python with VTK
+# Python with VTK
 
 VTK short for "The Visualization Toolkit"
 
@@ -6,7 +6,7 @@ VTK short for "The Visualization Toolkit"
 
 source -> filter -> Mapper -> Actor -> Renderer -> Render window -> interactor
 
-#数据转化为图元
+# 数据转化为图元
 
 为了从面向对象的角度描述Data Transformation，在多数时候，vtk将数据的描述、储存方式和处理方式进行了结合和抽象，封装成各个Algorithm类。这些Algorithm的对象（又叫Process Objects）相互连接使用，就描述了一个数据转换的流程，称为“pipeline”。根据在pipeline中所起不同作用，这些Algorithm类的对象又分为三类：
 
@@ -14,24 +14,24 @@ source -> filter -> Mapper -> Actor -> Renderer -> Render window -> interactor
 2. filter
 3. mapper
 
-##souce
+## souce
 
 VTK provides various source classes that can be used to construct simple geometric objects like spheres, cubes, cones, cylinders, etc...
 
 * 根据参数产生数据的，叫procedural objects
 * 连接到外部数据的，叫reader objects
 
-##Filters
+## Filters
 
 Takes data as input, modifies it in some way, and returns the modified data
 
 for example
 
-* select data of a particular size, strength, intensity, etc 
+* select data of a particular size, strength, intensity, etc
 * process 2D/3D images or polygon meshes
 * generate geometric objects from data
 
-##Mappers
+## Mappers
 
 * Maps data to graphics primitives (points, lines, or triangles) that can be displayed by the renderer
 
@@ -43,7 +43,7 @@ vtkPolyDataMapper
 * vtkPolyDataMapper maps polygonal data
 (vtkPolyData) to graphics primitives
 
-#把图元（graphics primitives）渲染为图像 - Rendering
+# 把图元（graphics primitives）渲染为图像 - Rendering
 
 这个过程的概念相对简单。我们记住渲染一个3D场景的几大要素就可以了，这些要素组成了“Graphics Model”。在vtk中，它们体现为：
 
@@ -54,28 +54,28 @@ vtkPolyDataMapper
 5. vtkRenderWindow - 将产生的图像放在屏幕上展示
 
 
-##Actors
+## Actors
 
 vtkActor represents an object (geometry and properties) in a rendering scene
 
-##Rendering
+## Rendering
 The process of converting 3D graphics primitives (points, lines, triangles, etc), a specification for lights and materials, and a camera view into an 2D image that can be displayed on the screen
 
 * vtkRenderer controls the rendering process for actors and scenes
 
 * Under the hood, VTK uses OpenGL for rendering
 
-##Render window
+## Render window
 
 The vtkRenderWindow class creates a window for renderers to draw into
 
-##Interactors
+## Interactors
 
 * The vtkRenderWindowInteractor class provides platform-independent window interaction via the mouse and keyboard
 * Allows you to rotate/zoom/pan the camera, select and manipulate actors, etc
 * Also handles time events
 
-#example
+# example
 
 ```python
 #Source
