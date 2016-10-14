@@ -1,6 +1,6 @@
-#Tutorial
+# Tutorial
 
-##1. 't1.geo'
+## 1. 't1.geo'
 
 /*********************************************************************
  *
@@ -83,7 +83,7 @@ The simplest construction in Gmsh’s scripting language is the ‘affectation�
 // elements in the mesh will be saved "as is", with their default
 // orientation.
 
-##2. 't2.geo'
+## 2. 't2.geo'
 
 /*********************************************************************
  *

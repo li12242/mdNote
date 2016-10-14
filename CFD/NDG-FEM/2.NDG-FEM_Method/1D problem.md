@@ -1,6 +1,6 @@
 # chapter 3 一维问题
 
-##3.1 基函数
+## 3.1 基函数
 
 NDG-FEM使用两种基函数，拉格朗日基函数 $l_i(r)$ 与勒让德基函数 $\psi_i(r)$。两种基函数及其系数向量之间通过Vanderomnd矩阵相联系，
 
@@ -39,6 +39,6 @@ V  = Vandermonde1D(N, r); invV = inv(V);
 
 `SetUp1D.m`中，r为拉格朗日插值函数节点，V为Vanderomnd矩阵。
 
-##网格中相连顶点编号
+## 网格中相连顶点编号
 
 几个重要的变量vmapM、vampP
