@@ -1,4 +1,4 @@
-#1D element_type
+# 标准单元
 
 ###基本说明
 
@@ -26,7 +26,7 @@ base_element_type 类主要属性
         nVertice    % vertices of element, i.e. line=2, triangle=3
         nameStr     % element name
     end %properties
-    
+
     properties(SetAccess=protected)
         LocalCoord      % local coordinate of nodes
         nNode           % number of local node, defined by degree
@@ -41,7 +41,7 @@ element_type 类特殊属性
 ```Matlab
     properties(SetAccess=protected)
         face            % face element object
-        nFace           % face number 
+        nFace           % face number
         DifferenceMatrix      % partical difference matrix
     end % properties procted
     properties(SetAccess=private)
@@ -69,4 +69,3 @@ shape = element_type('dim', 2, 'vertice', 3, 'degree', degree, 'name', 'triangle
 | face element node numbering   | obj.face.nNode        | FENN |
 
 面单元及其属性 face 所表示的面单元主要有
-
