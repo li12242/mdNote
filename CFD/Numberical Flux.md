@@ -15,14 +15,24 @@ IC: $u(x,0)=u_0(x)$
 
 #### 1.2.数值通量介绍
 DG残差方程为
-$$\int_{\Omega}l_i (u_t+au_x)dx=0$$
+
+$$
+\int_{\Omega}l_i (u_t+au_x)dx=0
+$$
+
 经过一次分部积分后
-$$\int_{\Omega}(l_i u_t+au \frac{\partial l_i}{\partial x})dx + (l_i au)\_{x=1} - (l_i (au))_ {x=-1}=0$$
+
+$$
+\int_{\Omega} \left( l_i u_t+au \frac{\partial l_i}{\partial x} \right)dx + (l_i au)\_{x=1} - (l_i (au))_ {x=-1}=0
+$$
 
 或者使用更一般的外法线向量
-$$\int_{\Omega}(l_i u_t+au \frac{\partial l_i}{\partial x})dx + \oint l_i \vec{n} (au)^* ds=0$$
 
-其中 $\vec{n}F^* = \vec{n}(au)^* $ 数值通量就是在单元边界处沿法向通量的近似，下面通过多元方程组具体介绍。
+$$
+\int_{\Omega}(l_i u_t+au \frac{\partial l_i}{\partial x})dx + \oint l_i \vec{n} (au)^* ds=0
+$$
+
+其中 $\vec{n}F^* = \vec{n}(au)^*$ 数值通量就是在单元边界处沿法向通量的近似，下面通过多元方程组具体介绍。
 
 ---
 ### 2.一维多元方程组中通量求解
@@ -30,10 +40,13 @@ $$\int_{\Omega}(l_i u_t+au \frac{\partial l_i}{\partial x})dx + \oint l_i \vec{n
 在方程组之中，无法直接使用特征线方法得到方程的解。而通过变量变换的方法得到特征变量后，可以转化为多个一元波动方程形式。下面具体介绍
 
 以Euler方程为例
-$$\begin{matrix}
+
+$$
+\begin{matrix}
 \frac{\partial \rho}{\partial t} + \rho_0\frac{\partial u}{\partial x} = 0 \cr
 \frac{\partial u}{\partial t} + \frac{a^2}{\rho_0} \frac{\partial \rho}{\partial x} = 0
-\end{matrix}$$
+\end{matrix}
+$$
 
 将方程写为矢量形式
 $$\frac{\partial U}{\partial t} + A\frac{\partial U}{\partial x} = 0$$

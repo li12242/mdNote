@@ -1,1 +1,0 @@
-#summary of Boundary condiation

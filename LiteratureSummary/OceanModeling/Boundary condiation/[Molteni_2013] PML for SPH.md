@@ -1,1 +1,0 @@
-#[Molteni_2013] Simple absorbing layer conditions for shallow wave simulations with Smoothed Particle Hydrodynamics

@@ -19,11 +19,11 @@ ALE-DG理论部分与ALE-FEM类似，其都是在动网格上求解微分方程�
 
 $$\frac{\partial f }{\partial t}\Big|_ X =  \frac{\partial f}{\partial t}\Big|_ {\mathcal{X}} +  \nabla f \cdot \vec{c}$$
 
-$$\frac{\partial f}{\partial t}\Big|_ X = \frac{\partial f}{\partial t} + \nabla f \cdot \vec{v}$$
+$$\frac{\partial f}{\partial t}\Big|_ {X} = \frac{\partial f}{\partial t} + \nabla f \cdot \vec{v}$$
 
 其中$\vec{c} = \vec{v} - \vec{w}$，$\vec{w}$为该点处参考空间对应节点（网格）运动速度。因此，普通微分方程转换成ALE形式时，需要将时间到处项换为参考空间内时间导数项，即
 
-$$\frac{\partial f}{\partial t} = \frac{\partial f}{\partial t}\Big|\_\mathcal{X} +  \nabla f \cdot \vec{c} -  \nabla f\cdot \vec{v} = \frac{\partial f}{\partial t}\Big|_ \mathcal{X} -  \vec{w} \cdot \nabla f$$
+$$\frac{\partial f}{\partial t} = \frac{\partial f}{\partial t}\Big|\_{\mathcal{X}} +  \nabla f \cdot \vec{c} -  \nabla f\cdot \vec{v} = \frac{\partial f}{\partial t}\Big|_ \mathcal{X} -  \vec{w} \cdot \nabla f$$
 
 当我们将Eulerian空间内积分方程换成ALE形式时又有所不同。根据Reynolds输运定理，
 
@@ -47,7 +47,9 @@ $$u_t + \nabla \cdot F(u) = 0$$
 
 $u_h$为近似解，通过使残差函数与基函数正交（垂直于基函数张成的解空间），使近似解$u_h$逼近真实解。
 
-$$\int_k \varphi_i \frac{\partial u_h}{\partial t}dx + \int_k \varphi_i \nabla \cdot F(u_h) dx = 0$$
+$$
+\int_k \varphi_i \frac{\partial u_h}{\partial t}dx + \int_k \varphi_i \nabla \cdot F(u_h) dx = 0
+$$
 
 通过Reynolds输运定理将时间导数的积分写成积分对时间求导形式
 
@@ -130,15 +132,15 @@ $$w(x,t) = w_{j+\frac{1}{2}}\frac{ x-x_{j-\frac{1}{2}}(t) }{\Delta_j(t)} + w_{j-
 
 到这里，ALE动网格运动形式已经完全确定，可以按照过去的DG方法将单元映射到标准单元/参考单元（reference cell）上。在一维情形中，标准线单元定义在[-1, 1]区间上，其映射函数为
 
-$$\mathscr{X}\_j:[-1, 1] \to K_j(t), \quad \mathscr{X}\_j(\xi,t) = \frac{1}{2}\Delta_j(t)(\xi + 1) + x_{j-\frac{1}{2}}(t)$$
+$$\mathscr{X}_j:[-1, 1] \to K_j(t), \quad \mathscr{X}\_j(\xi,t) = \frac{1}{2}\Delta_j(t)(\xi + 1) + x_{j-\frac{1}{2}}(t)$$
 
 可以看出，投影至Eulerian空间内坐标 $\mathscr{X}_j$ 对时间导数恰为该点网格运动速度
 
-$$\partial_t( \mathscr{X}\_j(\xi,t) ) = \frac{1}{2}(\xi + 1)(w_{j+\frac{1}{2}} - w_{j-\frac{1}{2}}) + w_{j-\frac{1}{2}}$$
+$$\partial_t( \mathscr{X}_j(\xi,t) ) = \frac{1}{2}(\xi + 1)(w_{j+\frac{1}{2}} - w_{j-\frac{1}{2}}) + w_{j-\frac{1}{2}}$$
 
 定义标准单元内基函数空间 $P^k[-1,1]$ 为 $\varphi_0(\xi), ... \varphi_k(\xi)$，那么在Eulerian空间内基函数形式为
 
-$$\hat{\varphi}\_l(x,t) = \varphi_l(\xi) = \varphi_l\Big(\frac{2(x-x_{j-\frac{1}{2}}(t))}{\Delta_j(t)} - 1 \Big)$$
+$$\hat{\varphi}_l(x,t) = \varphi_l(\xi) = \varphi_l\Big(\frac{2(x-x_{j-\frac{1}{2}}(t))}{\Delta_j(t)} - 1 \Big)$$
 
 下面来证明Eulerian空间内基函数物质导数为0。
 
@@ -203,7 +205,7 @@ $$\frac{d}{dt} \int_{K} J_k\varphi_i U_h dV = \int_{K} \nabla \varphi_i  \cdot \
 
 
 
-#4.算例验证
+# 4.算例验证
 
 [^1]: Nguyen, V.-T., 2010. An arbitrary Lagrangian–Eulerian discontinuous Galerkin method for simulations of flows over variable geometries. Journal of Fluids and Structures 26, 312–329. doi:10.1016/j.jfluidstructs.2009.11.002
 
